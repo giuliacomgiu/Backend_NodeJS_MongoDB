@@ -1,0 +1,22 @@
+{
+  "name": "myapp",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./bin/www"
+  },
+  "dependencies": {
+    "@awaitjs/express": "^0.6.1",
+    "cookie-parser": "~1.4.4",
+    "debug": "~2.6.9",
+    "express": "~4.16.1",
+    "http-errors": "~1.6.3",
+    "mongoose": "^5.10.1",
+    "mongoose-currency": "^0.2.0",
+    "morgan": "~1.9.1",
+    "passport": "^0.4.1",
+    "passport-local": "^1.0.0",
+    "passport-local-mongoose": "^6.0.1",
+    "pug": "^3.0.0"
+  }
+}
