@@ -28,7 +28,9 @@ dishRouter.route('/',)
     Dishes.find(req.query)
     .populate('comments')
     .then((dishes) => {
-        if (!dishes) { return next(new Error('Nothing to see here')) };
+        if (!dishes || dishes.length < 3) { 
+            return next(new Error('Nothing to see here')) 
+        };
         res.json({success:true, dishes});
     }, (err) => {next(err)} )
     .catch((err) => next(err));
@@ -46,6 +48,26 @@ dishRouter.route('/',)
             })
         .catch((err) => {});
     });
+
+    // input must always be in an array
+    /*let respSuccess = '{';
+    let respFail = '{'
+    req.body.forEach((dish) => {
+        Dishes.create(dish)
+        .then((dish) => {
+            respSuccess += '{"success":true, "dish":' + dish.toString() + '},';
+            //remove comma for last obj
+        }, (err) => {
+            respFail += '{"success":false, "err"' + err.message
+                + ', "dish":' + dish.toString() + '},';
+        })
+        .catch((err) => next(err));
+    });
+    console.log(respSuccess + '\n' + respFail);
+    respSuccess[-1] = '}';
+    respFail[-1] = '}';
+    res.send(('{' + respSuccess + ',' + respFail + '}'));
+    console.log('{' + respSuccess + ',' + respFail + '}');*/
 })
 .put((req, res, next) => {
     res.statusCode = 403;
@@ -62,14 +84,14 @@ dishRouter.route('/',)
 dishRouter.route('/:dishId',)
 .all((req,res,next) => {
     res.statusCode = 200;
-    res.setHeader('Content-Type', 'text/plain');
+    res.contentType('application/json');
     next();
 })
 .get((req,res,next) => {
     Dishes.findById(req.params.dishId)
     .populate('comments')
     .then((dish) => {
-        if (!dish) { return next(new Error('Nothing to see here')) };
+        if (!dish) { return next(new Error('There are no items!')) };
         res.json({success:true, dish})
     }, (err) => {next(err)} )
     .catch((err) => next(err));
@@ -94,7 +116,7 @@ dishRouter.route('/:dishId',)
     Dishes.findByIdAndDelete(req.params.dishId)
     .then((deleted) => { res.json({success:true, deleted}) } 
         , (err) => {
-            res.json({success:false, error: err})
+            res.json({success:false, error: err.message})
             next(err)} ) //formatting is weird
     .catch((err) => next(err));
 });
@@ -103,7 +125,7 @@ dishRouter.route('/:dishId',)
 dishRouter.route('/:dishId/comments',)
 .all((req,res,next) => {
     res.statusCode = 200;
-    res.setHeader('Content-Type', 'text/plain');
+    res.contentType('application/json');
     next();
 })
 .get((req,res,next) => {
@@ -116,22 +138,44 @@ dishRouter.route('/:dishId/comments',)
     .catch((err) => next(err));
 })
 .post((req, res, next) => {
-    res.end('Will add the comment: ' + req.body.comment + 
-    ' with rating: ' + req.body.rating);
+    Dishes.findById(req.params.dishId)
+    .then((dish) => { 
+        if (!dish) { return next(new Error('There are no items!')) };
+        dish.comments.push(req.body);
+        dish.save()
+        .then((dish) => { res.redirect(200, ('/'+req.params.dishId)) } 
+            ,(err) => next(err))
+    }, (err) => next(err))
+    .catch((err) => next(err));
+    
+    // Check if redirect works
+    //Must verify user
 })
 .put((req, res, next) => {
     res.statusCode = 403;
     res.end('PUT operation not supported on /dishes');
 })
 .delete((req, res, next) => {
-    res.end('Deleting all dishes');
+    Dishes.findById(req.params.dishId)
+    .then((dish) => { 
+        if(!dish) { return next(new Error('There are no items!')) }
+        for (let i = (dish.comments.length -1); i >= 0; i--) {
+            dish.comments.id(dish.comments[i]._id).remove();
+        }
+        dish.save()
+        .then((dish) => { res.json(dish); }
+            , (err) => next(err));
+    }, (err) => {
+            res.json({success:false, error: err.message})
+            next(err)} ) //formatting is weird
+    .catch((err) => next(err));
 });
 
 //SPECIFIC COMMENTS
 dishRouter.route('/:dishId/comments/:commentId',)
 .all((req,res,next) => {
     res.statusCode = 200;
-    res.setHeader('Content-Type', 'text/plain');
+    res.contentType('application/json');
     next();
 })
 .get((req,res,next) => {
