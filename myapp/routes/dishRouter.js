@@ -27,8 +27,10 @@ dishRouter.route('/',)
 .get((req,res,next) => {
     Dishes.find(req.query)
     .populate('comments')
-    .then((dishes) => {res.json({success:true, dishes})}
-        , (err) => {next(err)} )
+    .then((dishes) => {
+        if (!dishes) { return next(new Error('Nothing to see here')) };
+        res.json({success:true, dishes});
+    }, (err) => {next(err)} )
     .catch((err) => next(err));
 })
 .post((req, res, next) => {
@@ -66,8 +68,10 @@ dishRouter.route('/:dishId',)
 .get((req,res,next) => {
     Dishes.findById(req.params.dishId)
     .populate('comments')
-    .then((dish) => {res.json({success:true, dish})}
-        , (err) => {next(err)} )
+    .then((dish) => {
+        if (!dish) { return next(new Error('Nothing to see here')) };
+        res.json({success:true, dish})
+    }, (err) => {next(err)} )
     .catch((err) => next(err));
 })
 .post((req, res, next) => {
@@ -78,8 +82,12 @@ dishRouter.route('/:dishId',)
     Dishes.findByIdAndUpdate(req.params.dishId
         , {$set: req.body}
         , { new: true })
-    .then((dish) => { res.json({ success:true, dish }) }
-        , (err) => { next(err) })
+    .then((dish) => { 
+        if (!dish) { return next(new Error('There are no items!')) };
+        res.json({ success:true, dish }) 
+    }, (err) => {
+        res.json({success:false, error:err});
+        next(err); })
     .catch((err) => next(err));
 })
 .delete((req, res, next) => {
@@ -101,8 +109,10 @@ dishRouter.route('/:dishId/comments',)
 .get((req,res,next) => {
     Dishes.findById(req.params.dishId)
     .populate('comments')
-    .then((dish) => {res.json(dish.comments)}
-        , (err) => {next(err)} )
+    .then((dish) => {
+        if (!dish) { return next(new Error('There are no items!')) };
+        res.json(dish.comments)
+    }, (err) => {next(err)} )
     .catch((err) => next(err));
 })
 .post((req, res, next) => {
