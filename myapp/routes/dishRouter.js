@@ -179,18 +179,56 @@ dishRouter.route('/:dishId/comments/:commentId',)
     next();
 })
 .get((req,res,next) => {
-    res.end('Will send it to you!');
+    Dishes.findById(req.params.dishId)
+    .populate('comments')
+    .then(dish => {
+        if(!dish) { return next(new Error('There are no dishes!')) }
+        if(!dish.comments.id(req.params.commentId)) { 
+            return next(new Error('There are no comments!')) 
+        } else {
+            res.json(dish.comments.id(req.params.commentId));
+        }
+    }, (err) => next(err))
+    .catch((err) => next(err));
 })
 .post((req, res, next) => {
     res.statusCode = 403;
-    res.end('PUT operation not supported on /dishes');
+    res.end('Operation not supported on /dishes');
 })
 .put((req, res, next) => {
-    res.end('Will update the comment: ' + req.body.comment + 
-    ' and rating: ' + req.body.rating);
+    Dishes.findById(req.params.dishId)
+    .then((dish) => {
+        if(!dish) { return next(new Error('There are no dishes!')) }
+        if(!dish.comments.id(req.params.commentId)) { 
+            return next(new Error('There are no comments!')) 
+        }
+
+        let commentId = req.params.commentId;
+        let userRating = req.body.rating;
+        let userComment = req.body.comment;
+        if (userRating) { dish.comments.id(commentId).rating = userRating };
+        if (userComment) { dish.comments.id(commentId).comment = userComment };
+        dish.save()
+        .then((dish) => { res.json({ success:true, dish }); }
+            , (err) => next(err));
+
+    }, (err) => next(err))
+    .catch((err) => next(err)); 
 })
 .delete((req, res, next) => {
-    res.end('Deleting all dishes');
+    Dishes.findById(req.params.dishId)
+    .then((dish) => {
+        if(!dish) { return next(new Error('There are no dishes!')) }
+        if(!dish.comments.id(req.params.commentId)) { 
+            return next(new Error('There are no comments!')) 
+        }
+
+        dish.comments.id(req.params.commentId).remove();
+        dish.save()
+        .then((dish) => { res.json({ success:true, dish }); }
+            , (err) => next(err));
+    } ,(err) => next(err))
+    .catch((err) => next(err))
 });
 
 module.exports = dishRouter;
