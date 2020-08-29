@@ -1,0 +1,1 @@
+MongoDB's data would be stored in ./data
