@@ -12,7 +12,7 @@ const User = new Schema({
         type: String,
         required: true
     },
-    dateOfBirth: {
+    birthdate: {
         type: Date,
         required: true
     },
@@ -24,4 +24,4 @@ const User = new Schema({
 
 User.plugin(passportLocalMongoose);
 
-module.exports = model('User', User);
+module.exports = mongoose.model('User', User);

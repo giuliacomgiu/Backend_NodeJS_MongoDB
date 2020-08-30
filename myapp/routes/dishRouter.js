@@ -115,9 +115,7 @@ dishRouter.route('/:dishId',)
 .delete((req, res, next) => {
     Dishes.findByIdAndDelete(req.params.dishId)
     .then((deleted) => { res.json({success:true, deleted}) } 
-        , (err) => {
-            res.json({success:false, error: err.message})
-            next(err)} ) //formatting is weird
+        , (err) => next(err) ) //formatting is weird
     .catch((err) => next(err));
 });
 
@@ -165,9 +163,7 @@ dishRouter.route('/:dishId/comments',)
         dish.save()
         .then((dish) => { res.json(dish); }
             , (err) => next(err));
-    }, (err) => {
-            res.json({success:false, error: err.message})
-            next(err)} ) //formatting is weird
+    }, (err) => next(err) ) //formatting is weird
     .catch((err) => next(err));
 });
 

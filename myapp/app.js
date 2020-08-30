@@ -1,15 +1,19 @@
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
-var cookieParser = require('cookie-parser');
+const cookieParser = require('cookie-parser');
+const session = require('cookie-session');
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
 var logger = require('morgan');
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+const indexRouter = require('./routes/index');
+const userRouter = require('./routes/userRouter');
+const dishRouter = require('./routes/dishRouter');
+const User = require('./models/users');
 
 // connecting to db
 const mongoose = require('mongoose');
-const dishRouter = require('./routes/dishRouter');
 mongoose.connect('mongodb://localhost:27017/myapp', {useNewUrlParser: true});
 
 const db = mongoose.connection;
@@ -26,10 +30,18 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(session({secret:'Qu!cK Br0wN F0X'}));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Configure passport middleware
+passport.use(new LocalStrategy(User.authenticate()));
+app.use(passport.initialize());
+app.use(passport.session());
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
+
 app.use('/', indexRouter);
-app.use('/users', usersRouter);
+app.use('/users', userRouter);
 app.use('/dishes', dishRouter);
 
 // catch 404 and forward to error handler
