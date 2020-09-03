@@ -4,17 +4,15 @@ var path = require('path');
 const cookieParser = require('cookie-parser');
 const session = require('cookie-session');
 var logger = require('morgan');
-var passport = require('passport');
+const mongoose = require('mongoose');
 
-const auth = require('./auth');
+var auth = require('./auth');
 const indexRouter = require('./routes/index');
 const userRouter = require('./routes/userRouter');
 const dishRouter = require('./routes/dishRouter');
 
 // connecting to db
-const mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost:27017/myapp', {useNewUrlParser: true});
-
+mongoose.connect(process.env.MONGO_URI, {useNewUrlParser: true});
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function() {console.log('Connected to database')});
@@ -35,8 +33,8 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Configure passport middleware
-app.use(passport.initialize());
-//app.use(passport.session());
+app.use(auth.passport.initialize());
+//app.use(auth.passport.session());
 
 // Routes
 app.use('/', indexRouter);

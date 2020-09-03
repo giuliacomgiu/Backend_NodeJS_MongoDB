@@ -1,6 +1,5 @@
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
-var passport = require('passport');
 var User = require('../models/users');
 var auth = require('../auth');
 var userRouter = require('express').Router();
@@ -21,7 +20,7 @@ userRouter.route('/')
     next();
 })
 .get((req, res) => {
-    res.json({ success: true, message:"Will send al users"});
+    res.json({ success: true, message:"Will send all users"});
 //    res.render('index', { user : req.user });
 });
 
@@ -43,7 +42,7 @@ userRouter.route('/register')
             res.statusCode = 500;
             return res.json({success:false, error:err.message});
         }
-        passport.authenticate('local')(req, res, () => {
+        auth.passport.authenticate('local')(req, res, () => {
             res.redirect('/');
         });
     });
@@ -59,7 +58,7 @@ userRouter.route('/login')
     res.render('login', { user : req.user });
 })
 .post(function(req, res, next) {
-    passport.authenticate('local', (err, user, info) => {
+    auth.passport.authenticate('local', (err, user, info) => {
         if(err) return next(err);
         if(!user){
             res.statusCode = 401;
@@ -80,7 +79,7 @@ userRouter.route('/login')
 });
 
 userRouter.get('/checkToken', function(req, res) {
-    passport.authenticate('jwt', {session: false}, (err, user, info) => {
+    auth.passport.authenticate('jwt', {session: false}, (err, user, info) => {
         if (err) return next(err);
         if(!user) {
             res.statusCode = 401;

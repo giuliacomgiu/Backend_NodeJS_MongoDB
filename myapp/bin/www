@@ -1,6 +1,14 @@
 #!/usr/bin/env node
 
 /**
+ * Local environnment variables.
+ */
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+  console.log('Environment variables loaded.')
+}
+
+/**
  * Module dependencies.
  */
 

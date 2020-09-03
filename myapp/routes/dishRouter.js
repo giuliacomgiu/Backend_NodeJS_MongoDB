@@ -5,7 +5,7 @@ const {addAsync} = require('@awaitjs/express');
 
 //const cors = require('./cors');
 const Dishes = require('../models/dishes');
-//var auth = require('../authenticate');
+var auth = require('../auth');
 
 //Adjusting to MongoDB + NodeJS updates
 mongoose.set('useNewUrlParser', true);
@@ -26,8 +26,9 @@ dishRouter.route('/',)
 })
 .get((req,res,next) => {
     Dishes.find(req.query)
-    .populate('comments')
+    .populate('comments.author')
     .then((dishes) => {
+        //dishes can be null or []
         if (!dishes || dishes.length < 3) { 
             return next(new Error('Nothing to see here')) 
         };
@@ -89,7 +90,7 @@ dishRouter.route('/:dishId',)
 })
 .get((req,res,next) => {
     Dishes.findById(req.params.dishId)
-    .populate('comments')
+    .populate('comments.author')
     .then((dish) => {
         if (!dish) { return next(new Error('There are no items!')) };
         res.json({success:true, dish})
@@ -128,20 +129,23 @@ dishRouter.route('/:dishId/comments',)
 })
 .get((req,res,next) => {
     Dishes.findById(req.params.dishId)
-    .populate('comments')
+    .populate('comments.author')
     .then((dish) => {
-        if (!dish) { return next(new Error('There are no items!')) };
-        res.json(dish.comments)
+        if (!dish || !dish.comments) { 
+            return next(new Error('There are no items!')) 
+        };
+        res.json(dish.comments);
     }, (err) => {next(err)} )
     .catch((err) => next(err));
 })
-.post((req, res, next) => {
+.post(auth.verifyUser, (req, res, next) => {
     Dishes.findById(req.params.dishId)
     .then((dish) => { 
         if (!dish) { return next(new Error('There are no items!')) };
+        req.body.author = req.user._id;
         dish.comments.push(req.body);
         dish.save()
-        .then((dish) => { res.redirect(200, ('/'+req.params.dishId)) } 
+        .then((dish) => { res.redirect('/dishes/'+req.params.dishId) } 
             ,(err) => next(err))
     }, (err) => next(err))
     .catch((err) => next(err));
@@ -176,7 +180,7 @@ dishRouter.route('/:dishId/comments/:commentId',)
 })
 .get((req,res,next) => {
     Dishes.findById(req.params.dishId)
-    .populate('comments')
+    .populate('comments.author')
     .then(dish => {
         if(!dish) { return next(new Error('There are no dishes!')) }
         if(!dish.comments.id(req.params.commentId)) { 
