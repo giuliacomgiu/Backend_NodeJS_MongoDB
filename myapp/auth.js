@@ -36,4 +36,25 @@ passport.deserializeUser(User.deserializeUser());
 
 module.exports.passport = passport;
 
-exports.verifyUser = auth.passport.authenticate('jwt',{session:false});
+exports.verifyAuthentication = passport.authenticate('jwt',{session:false});
+
+exports.verifyAdmin = function(req, res, next){
+    if (req.user.admin) { next() }
+    else {
+        err = new Error('Unauthorized.');
+        err.status = 403;
+        return next(err);
+    }
+}
+
+// Check user authorization before operation. Dont use as middleware
+exports.matchUser = function(stored_id, req_id){
+    if (!req_id || !stored_id.equals(req_id))
+    {
+        err = new Error('Unauthorized.');
+        err.status = 403;
+        return err;
+    } else {
+        return null;
+    }
+}

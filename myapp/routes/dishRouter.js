@@ -36,7 +36,7 @@ dishRouter.route('/',)
     }, (err) => {next(err)} )
     .catch((err) => next(err));
 })
-.post((req, res, next) => {
+.post(auth.verifyAuthentication, auth.verifyAdmin, (req, res, next) => {
 
     // input must always be in an array
     // CHECK HERE! When err in array, res.json gets only false response
@@ -70,11 +70,11 @@ dishRouter.route('/',)
     res.send(('{' + respSuccess + ',' + respFail + '}'));
     console.log('{' + respSuccess + ',' + respFail + '}');*/
 })
-.put((req, res, next) => {
+.put(auth.verifyAuthentication, auth.verifyAdmin, (req, res, next) => {
     res.statusCode = 403;
     res.end('PUT operation not supported on /dishes');
 })
-.delete((req, res, next) => {
+.delete(auth.verifyAuthentication, auth.verifyAdmin, (req, res, next) => {
     Dishes.deleteMany({})
     .then((deleted) => {res.json({success:true, deleted})}
         , (err) => next(err))
@@ -97,11 +97,11 @@ dishRouter.route('/:dishId',)
     }, (err) => {next(err)} )
     .catch((err) => next(err));
 })
-.post((req, res, next) => {
+.post(auth.verifyAuthentication, auth.verifyAdmin, (req, res, next) => {
     res.statusCode = 403;
     res.end('Operation not supported');
 })
-.put((req, res, next) => {
+.put(auth.verifyAuthentication, auth.verifyAdmin, (req, res, next) => {
     Dishes.findByIdAndUpdate(req.params.dishId
         , {$set: req.body}
         , { new: true })
@@ -113,7 +113,7 @@ dishRouter.route('/:dishId',)
         next(err); })
     .catch((err) => next(err));
 })
-.delete((req, res, next) => {
+.delete(auth.verifyAuthentication, auth.verifyAdmin, (req, res, next) => {
     Dishes.findByIdAndDelete(req.params.dishId)
     .then((deleted) => { res.json({success:true, deleted}) } 
         , (err) => next(err) ) //formatting is weird
@@ -138,7 +138,7 @@ dishRouter.route('/:dishId/comments',)
     }, (err) => {next(err)} )
     .catch((err) => next(err));
 })
-.post(auth.verifyUser, (req, res, next) => {
+.post(auth.verifyAuthentication, (req, res, next) => {
     Dishes.findById(req.params.dishId)
     .then((dish) => { 
         if (!dish) { return next(new Error('There are no items!')) };
@@ -153,11 +153,11 @@ dishRouter.route('/:dishId/comments',)
     // Check if redirect works
     //Must verify user
 })
-.put((req, res, next) => {
+.put(auth.verifyAuthentication, auth.verifyAdmin, (req, res, next) => {
     res.statusCode = 403;
     res.end('PUT operation not supported on /dishes');
 })
-.delete((req, res, next) => {
+.delete(auth.verifyAuthentication, auth.verifyAdmin, (req, res, next) => {
     Dishes.findById(req.params.dishId)
     .then((dish) => { 
         if(!dish) { return next(new Error('There are no items!')) }
@@ -191,17 +191,20 @@ dishRouter.route('/:dishId/comments/:commentId',)
     }, (err) => next(err))
     .catch((err) => next(err));
 })
-.post((req, res, next) => {
+.post(auth.verifyAuthentication, auth.verifyAdmin, (req, res, next) => 
+    {
     res.statusCode = 403;
     res.end('Operation not supported on /dishes');
 })
-.put((req, res, next) => {
+.put(auth.verifyAuthentication, (req, res, next) => {
     Dishes.findById(req.params.dishId)
     .then((dish) => {
         if(!dish) { return next(new Error('There are no dishes!')) }
         if(!dish.comments.id(req.params.commentId)) { 
             return next(new Error('There are no comments!')) 
         }
+        err = auth.matchUser(dish.comments.id(req.params.commentId).author._id, req.user._id);
+        if(err) { return next(err) };
 
         let commentId = req.params.commentId;
         let userRating = req.body.rating;
@@ -215,13 +218,15 @@ dishRouter.route('/:dishId/comments/:commentId',)
     }, (err) => next(err))
     .catch((err) => next(err)); 
 })
-.delete((req, res, next) => {
+.delete(auth.verifyAuthentication, (req, res, next) => {
     Dishes.findById(req.params.dishId)
     .then((dish) => {
         if(!dish) { return next(new Error('There are no dishes!')) }
         if(!dish.comments.id(req.params.commentId)) { 
             return next(new Error('There are no comments!')) 
         }
+        err = auth.matchUser(dish.comments.id(req.params.commentId).author._id, req.user._id);
+        if(err) { return next(err) };
 
         dish.comments.id(req.params.commentId).remove();
         dish.save()
