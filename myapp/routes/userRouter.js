@@ -146,7 +146,7 @@ userRouter.get('/facebook', cors.cors, auth.passport.authenticate('facebook') );
 userRouter.get('/facebook/callback',
     cors.cors,  
     auth.passport.authenticate('facebook', 
-    { failureRedirect: `${proces.env.APP_URI_SSL}/users/login` }),
+    { failureRedirect: `${process.env.APP_URI_SSL}/users/login` }),
     function(req, res) {
         res.redirect('/');
     });
