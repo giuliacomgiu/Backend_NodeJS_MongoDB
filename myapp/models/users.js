@@ -5,20 +5,25 @@ const { model } = require('./dishes');
 
 const User = new Schema({
     firstname: {
-        type: String,
-        required: true
+        type: String/*,
+        required: true*/
     },
     lastname: {
-        type: String,
-        required: true
+        type: String/*,
+        required: true*/
     },
     birthdate: {
-        type: Date,
-        required: true
+        type: Date
     },
     admin: {
         type: Boolean,
         default: false
+    },
+    facebookId: {
+        type: String
+    },
+    googleId: {
+        type: String
     }
 });
 
