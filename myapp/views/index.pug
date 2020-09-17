@@ -2,4 +2,23 @@ extends layout
 
 block content
   h1= title
-  p Welcome to #{title}
+  p Welcome to #{title}, a simple REST API.
+  p Its uses self signed SSL for testing purposes,
+  p CORS is enabled and supports both server to server request (no Origin header) and preflight.
+  p You can register on the website, 
+  p login with Facebook or Google (server uses sessions)
+  p or Facebook (server uses JWT).
+  p The endpoints are:
+  a(href='dishes') Dishes
+  p - Where you can also access dishes indivudually, as well as their comments.
+
+  a(href='users') Users
+  p - This page returns all users. Available only for admins.
+
+  a(href='users/register') Registration page
+  p - Website registration.
+
+  a(href='users/login') Login page
+  p - Website login.
+
+  label #[input] text

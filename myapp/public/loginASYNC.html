@@ -1,14 +1,22 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Async Token Login JavaScript Example</title>
-<meta charset="UTF-8">
+  <title>Login</title>
+  <meta charset="UTF-8">
 </head>
 <body>
 <div id="fb-root"></div>
-
 <!-- Facebook authentication -->
 <script async defer crossorigin="anonymous" src="https://connect.facebook.net/pt_BR/sdk.js#xfbml=1&version=v8.0&appId=255150088794036&autoLogAppEvents=1" nonce="PsjWoyMc"></script>
+
+<h2>Login!</h2>
+<h3>Enter your account details below: </h3>
+  <label for="user">Username:</label>
+    <input type="text" id="user" name="user"><br><br>
+  <label for="password">Password:</label>
+    <input type="text" id="password" name="password"><br><br>
+
+<h3>Or use Token authentication with Facebook:</h3>
 <script>
 
   function statusChangeCallback(response) {  // Called with the results from FB.getLoginStatus().
