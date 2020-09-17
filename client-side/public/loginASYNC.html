@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login</title>
+  <meta charset="UTF-8">
+</head>
+<body>
+<div id="fb-root"></div>
+<!-- Facebook authentication -->
+<script async defer crossorigin="anonymous" src="https://connect.facebook.net/pt_BR/sdk.js#xfbml=1&version=v8.0&appId=255150088794036&autoLogAppEvents=1" nonce="PsjWoyMc"></script>
+
+<h2>Login!</h2>
+<h3>Enter your account details below: </h3>
+  <label for="user">Username:</label>
+    <input type="text" id="user" name="user"><br><br>
+  <label for="password">Password:</label>
+    <input type="text" id="password" name="password"><br><br>
+
+<h3>Or use Token authentication with Facebook:</h3>
+<script>
+
+  function statusChangeCallback(response) {  // Called with the results from FB.getLoginStatus().
+    console.log('statusChangeCallback');
+    console.log(response);                   // The current login status of the person.
+    if (response.status === 'connected') {   // Logged into your webpage and Facebook.
+      testAPI();  
+    } else {                                 // Not logged into your webpage or we are unable to tell.
+      document.getElementById('status').innerHTML = 'Please log ' +
+        'into this webpage.';
+    }
+  }
+
+
+  function checkLoginState() {               // Called when a person is finished with the Login Button.
+    FB.getLoginStatus(function(response) {   // See the onlogin handler
+      statusChangeCallback(response);
+    });
+  }
+
+
+  window.fbAsyncInit = function() {
+    FB.init({
+      appId      : process.env.FACEBOOK_APP_ID,
+      xfbml      : true,                     // Parse social plugins on this webpage.
+      version    : 'v8.0'           // Use this Graph API version for this call.
+    });
+
+
+    FB.getLoginStatus(function(response) {   // Called after the JS SDK has been initialized.
+      statusChangeCallback(response);        // Returns the login status.
+    });
+  };
+ 
+  function testAPI() {                      // Testing Graph API after login.  See statusChangeCallback() for when this call is made.
+    console.log('Welcome!  Fetching your information.... ');
+    FB.api('/me', function(response) {
+      console.log('Successful login for: ' + response.name);
+      document.getElementById('status').innerHTML =
+        'Thanks for logging in, ' + response.name + '!';
+    });
+  }
+
+</script>
+
+<!-- The JS SDK Login Button -->
+
+<div class="fb-login-button" data-size="large" data-button-type="continue_with" 
+data-layout="default" data-auto-logout-link="false" data-use-continue-as="false" data-width="" 
+onlogin="checkLoginState();"></div>
+
+<div id="status">
+</div>
+
+
+<!-- Google authentication -->
+<script src="https://apis.google.com/js/platform.js" async defer></script>
+<meta name="google-signin-client_id" content="819901770232-2qq0aqkg0b1ru6osd7mmbfpj9uq6lfpq.apps.googleusercontent.com">
+<div class="g-signin2" data-onsuccess="onSignIn"></div>
+<script>
+function onSignIn(googleUser) {
+  var profile = googleUser.getBasicProfile();
+  console.log('ID: ' + profile.getId()); // Do not send to your backend! Use an ID token instead.
+  console.log('Name: ' + profile.getGivenName());
+  console.log('Last name: ' + profile.getFamilyName());
+  console.log('Image URL: ' + profile.getImageUrl());
+  console.log('Email: ' + profile.getEmail()); // This is null if the 'email' scope is not present.
+
+  var id_token = googleUser.getAuthResponse().id_token; // Token id for backend
+
+  /*var xhr = new XMLHttpRequest(); // Sending token to backend
+  xhr.open('POST', 'http://localhost:3000/users/google/token');
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  xhr.setRequestHeader('code',id_token)
+  xhr.onload = function() {
+    console.log('Signed in as: ' + xhr.responseText);
+  };
+  xhr.send('code=' + id_token); */
+}
+</script>
+<!--<script>
+  function onSignIn(authResult) {
+    if (authResult['code']) {
+  
+      // Send the code to the server
+      $.ajax({
+        type: 'POST',
+        url: 'http://localhost:3000/users/google/token',
+        // Always include an `X-Requested-With` header in every AJAX request,
+        // to protect against CSRF attacks.
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        contentType: 'application/octet-stream; charset=utf-8',
+        success: function(result) {
+          // Handle or verify the server response.
+        },
+        processData: false,
+        data: authResult['code']
+      });
+    } else {
+      // There was an error.
+    }
+  }
+  </script>-->
+</body>
+</html>
