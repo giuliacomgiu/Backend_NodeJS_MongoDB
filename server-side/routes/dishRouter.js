@@ -1,10 +1,10 @@
 const express = require('express'); 
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
-const {addAsync} = require('@awaitjs/express');
 
 const cors = require('./cors');
 const Dishes = require('../models/dishes');
+var myErr = require('../error')
 var auth = require('../auth');
 
 //Adjusting to MongoDB + NodeJS updates
@@ -30,9 +30,17 @@ dishRouter.route('/',)
   .then((dishes) => {
     //dishes can be null or []
     if (!dishes || dishes.length < 3) { 
-      return next(new Error('Nothing to see here')) 
+      return next(new myErr.NotFoundError('Dish'));
     };
-    res.json({success:true, dishes});
+
+    // HATEOAS compatibility
+    let obj = {};
+    obj.links = [];
+    for (let dish of dishes){
+      obj.links.push({href:`/${dish.id}`, rel:'dish', type:'GET'});
+    };
+
+    return res.json({success:true, links:obj.links, dishes:dishes});
   }, (err) => {next(err)} )
   .catch((err) => next(err));
 })
@@ -43,7 +51,14 @@ dishRouter.route('/',)
   {
     Dishes.create(req.body)
     .then(
-      (dish) => {res.json({success:true, dish:dish})}, 
+      (dish) => {
+        let obj = {};
+        obj.links = [];
+        obj.links.push({href:`/`, rel:'dishes', type:'GET'});
+        obj.links.push({href:`/${dish.id}`, rel:'dish', type:'GET'});
+
+        return res.json({success:true, links:obj.links, dish:dish})
+      }, 
       (err) => next(err) )
     .catch((err) => {
       res.json({success: false, dish:dish});
@@ -56,8 +71,7 @@ dishRouter.route('/',)
   auth.verifyAdmin, 
   (req, res, next) => 
   {
-    res.statusCode = 403;
-    res.end('PUT operation not supported on /dishes');
+    return next(new myErr.ForbiddenMethodError('PUT'))
   }
 )
 .delete(cors.restrict, 
@@ -67,7 +81,10 @@ dishRouter.route('/',)
   {
     Dishes.deleteMany({})
     .then(
-      (deleted) => {res.json({success:true, deleted})},
+      (del) => {
+        let links = {href:`/`, rel:'dishes', type:'GET'};
+        return res.json({success:true, links:links, deleted:del})
+      },
       (err) => { next(err) })
     .catch((err) => next(err));
   }
@@ -84,8 +101,12 @@ dishRouter.route('/:dishId',)
   Dishes.findById(req.params.dishId)
   .populate('comments.author')
   .then((dish) => {
-    if (!dish) { return next(new Error('There are no items!')) };
-    return res.json({success:true, dish})
+    let links = {href:`/`, rel:'dishes', type:'GET'};
+
+    if (!dish) { 
+      return next(new myErr.NotFoundError('Dish'));
+    };
+    return res.json({success:true, links:links, dish:dish})
   }, (err) => {next(err)} )
   .catch((err) => next(err));
 })
@@ -94,23 +115,24 @@ dishRouter.route('/:dishId',)
   auth.verifyAdmin, 
   (req, res, next) => 
   {
-    res.statusCode = 403;
-    res.end('Operation not supported');
+    return next(new myErr.ForbiddenMethodError('POST'))
   }
 )
 .put(cors.restrict,
   auth.verifyAuthentication, 
   auth.verifyAdmin, (req, res, next) => 
   {
+    let links = {href:`/`, rel:'dishes', type:'GET'};
     Dishes.findByIdAndUpdate(req.params.dishId, 
       {$set: req.body}, 
       { new: true })
-    .then((dish) => { 
-      if (!dish) { return next(new Error('There are no items!')) };
-      res.json({ success:true, dish }) 
-    }, (err) => {
-      res.json({success:false, error:err});
-      next(err); })
+    .then((dish) => {
+      if (!dish) { 
+        return next(new myErr.NotFoundError('Dish')); 
+      };
+      
+      return res.json({ success:true, links:links, dish:dish }) 
+    }, (err) => next(err) )
     .catch((err) => next(err));
   }
 )
@@ -120,7 +142,10 @@ dishRouter.route('/:dishId',)
   {
     Dishes.findByIdAndDelete(req.params.dishId)
     .then(
-      (deleted) => { res.json({success:true, deleted}) }, 
+      (del) => { 
+        let links = {href:`/`, rel:'dishes', type:'GET'};
+        return res.json({success:true, links:links, deleted:del})
+       }, 
       (err) => next(err) )
     .catch((err) => next(err));
   }
@@ -137,10 +162,21 @@ dishRouter.route('/:dishId/comments',)
   Dishes.findById(req.params.dishId)
   .populate('comments.author')
   .then((dish) => {
-    if (!dish || !dish.comments) { 
-      return next(new Error('There are no items!')) 
+    if (!dish) {
+      return next(new myErr.NotFoundError('Dish'));
+    } else if (!dish.comments) {
+      return next(new myErr.NotFoundError('Comment'));
     };
-    res.json(dish.comments);
+
+    let obj = {};
+    obj.links = [];
+    obj.links.push({href:`/`, rel:'dishes', type:'GET'});
+    obj.links.push({href:`/${req.params.dishId}`, rel:'dish', type:'GET'});
+    for (let comment of dish.comments){
+      obj.links.push({href:`/${comment.id}`, rel:'dish-comment', type:'GET'});
+    };
+
+    return res.json({success:true, links:obj.links, comments:dish.comments});
   }, (err) => {next(err)} )
   .catch((err) => next(err));
 })
@@ -148,20 +184,11 @@ dishRouter.route('/:dishId/comments',)
   auth.verifyAuthentication, 
   (req, res, next) => 
   {
-    /*Dishes.findById(req.params.dishId)
-    .then((dish) => { 
-      if (!dish) { return next(new Error('There are no items!')) };
-      req.body.author = req.user._id;
-      dish.comments.push(req.body);
-      dish.save()
-      .then((dish) => { res.redirect('/dishes/'+req.params.dishId) } 
-        ,(err) => next(err))
-    }, (err) => next(err))
-    .catch((err) => next(err));*/
-
     Dishes.findById(req.params.dishId)
     .then((dish) => { 
-      if (!dish) { return next(new Error('There are no items!')) };
+      if (!dish) { 
+        return next(new myErr.NotFoundError('Dish')) 
+      };
       req.body.author = req.user._id;
       dish.comments.push(req.body);
       return dish.save();
@@ -176,8 +203,7 @@ dishRouter.route('/:dishId/comments',)
   auth.verifyAdmin, 
   (req, res, next) => 
   {
-    res.statusCode = 403;
-    res.end('PUT operation not supported on /dishes');
+    return next(new myErr.ForbiddenMethodError('PUT'))
   }
 )
 .delete(cors.restrict,
@@ -187,13 +213,21 @@ dishRouter.route('/:dishId/comments',)
   {
     Dishes.findById(req.params.dishId)
     .then((dish) => { 
-      if(!dish) { return next(new Error('There are no items!')) }
+      if(!dish) { 
+        return next(new myErr.NotFoundError('Dish'));
+      }
       for (let i = (dish.comments.length -1); i >= 0; i--) {
         dish.comments.id(dish.comments[i]._id).remove();
       }
       return dish.save();
     }, (err) => next(err) )
-    .then((dish) => { res.json(dish); }, (err) => next(err))
+    .then((dish) => { 
+      let obj = {};
+      obj.links = [];
+      obj.links.push({href:`/`, rel:'dishes', type:'GET'});
+      obj.links.push({href:`/${req.params.dishId}`, rel:'dish', type:'GET'});
+      return res.json({success:true, links:obj.links, dish:dish});
+    }, (err) => next(err))
     .catch((err) => next(err));
   }
 );
@@ -209,11 +243,19 @@ dishRouter.route('/:dishId/comments/:commentId',)
   Dishes.findById(req.params.dishId)
   .populate('comments.author')
   .then(dish => {
-    if(!dish) { return next(new Error('There are no dishes!')) }
+    if(!dish) { 
+      return next(new myErr.NotFoundError('Dish'));
+    }
     if(!dish.comments.id(req.params.commentId)) { 
-      return next(new Error('There are no comments!')) 
+      return next(new myErr.NotFoundError('Comment'));
     } else {
-      res.json(dish.comments.id(req.params.commentId));
+      let comment = dish.comments.id(req.params.commentId);
+      let obj = {};
+      obj.links = [];
+      obj.links.push({href:`/`, rel:'dishes', type:'GET'});
+      obj.links.push({href:`/${req.params.dishId}`, rel:'dish', type:'GET'});
+      obj.links.push({href:`/${req.params.dishId}/comments`, rel:'dish-comment', type:'GET'});
+      return res.json({success:true, links:obj.links, comment:comment})
     }
   }, (err) => next(err))
   .catch((err) => next(err));
@@ -223,8 +265,7 @@ dishRouter.route('/:dishId/comments/:commentId',)
   auth.verifyAdmin, 
   (req, res, next) => 
   {
-    res.statusCode = 403;
-    res.end('Operation not supported on /dishes');
+    return next(new myErr.ForbiddenMethodError('POST'))
   }
 )
 .put(cors.restrict,
@@ -233,21 +274,32 @@ dishRouter.route('/:dishId/comments/:commentId',)
   {
     Dishes.findById(req.params.dishId)
     .then((dish) => {
-      if(!dish) { return next(new Error('There are no dishes!')) }
-      if(!dish.comments.id(req.params.commentId)) { 
-        return next(new Error('There are no comments!')) 
+      if(!dish) { 
+        return next(new myErr.NotFoundError('Dish'));
       }
-      err = auth.matchUser(dish.comments.id(req.params.commentId).author._id, req.user._id);
-      if(err) { return next(err) };
 
-      let commentId = req.params.commentId;
-      let userRating = req.body.rating;
-      let userComment = req.body.comment;
-      if (userRating) { dish.comments.id(commentId).rating = userRating };
-      if (userComment) { dish.comments.id(commentId).comment = userComment };
+      let commentDB = dish.comments.id(req.params.commentId);
+      if(!commentDB) { 
+        return next(new myErr.NotFoundError('Comment'));
+      }
+
+      // Checking if comment author and user match
+      // Will call error handler if they don't
+      auth.matchUser(commentDB.author._id, req.user._id,next);
+
+      // This will only be executed if users match
+      if (userRating) { commentDB.rating = req.body.rating };
+      if (userComment) { commentDB.comment = req.body.comment };
       return dish.save()
     }, (err) => next(err))
-    .then((dish) => { res.json({ success:true, dish }); }, 
+    .then((dish) => { 
+      let obj = {};
+      obj.links = [];
+      obj.links.push({href:`/`, rel:'dishes', type:'GET'});
+      obj.links.push({href:`/${req.params.dishId}`, rel:'dish', type:'GET'});
+      obj.links.push({href:`/${req.params.dishId}/comments`, rel:'dish-comment', type:'GET'});
+      return res.json({success:true, links:obj.links, comment:dish.comments.id(req.params.commentId)})
+    }, 
       (err) => next(err))
     .catch((err) => next(err)); 
   }
@@ -258,17 +310,31 @@ dishRouter.route('/:dishId/comments/:commentId',)
   {
     Dishes.findById(req.params.dishId)
     .then((dish) => {
-      if(!dish) { return next(new Error('There are no dishes!')) }
-      if(!dish.comments.id(req.params.commentId)) { 
-        return next(new Error('There are no comments!')) 
+      if(!dish) {
+        return next(new myErr.NotFoundError('Dish'));
       }
-      err = auth.matchUser(dish.comments.id(req.params.commentId).author._id, req.user._id);
-      if(err) { return next(err) };
 
+      let commentDB = dish.comments.id(req.params.commentId);
+      if(!commentDB) { 
+        return next(new myErr.NotFoundError('Dish'));
+      }
+
+      // Check if logged in user and author match
+      // Will call error handler if they don't
+      auth.matchUser(commentDB.author._id, req.user._id);
+
+      //This will only be executed if users match
       dish.comments.id(req.params.commentId).remove();
       return dish.save();
     } ,(err) => next(err))
-    .then((dish) => { res.json({ success:true, dish }); }
+    .then((dish) => { 
+      let obj = {};
+      obj.links = [];
+      obj.links.push({href:`/`, rel:'dishes', type:'GET'});
+      obj.links.push({href:`/${req.params.dishId}`, rel:'dish', type:'GET'});
+      obj.links.push({href:`/${req.params.dishId}/comments`, rel:'dish-comment', type:'GET'});
+      return res.json({success:true, links:obj.links, dish:dish})
+    }
       , (err) => next(err))
     .catch((err) => next(err))
   }

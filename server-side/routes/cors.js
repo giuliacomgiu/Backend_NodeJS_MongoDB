@@ -11,7 +11,10 @@ var corsRestrictOptions = (req, callback) => {
     }
     else {
         //corsOptions = { origin: false };
-        var err = (new Error('Not allowed by CORS'));
+        var err = new Error('Forbidden by CORS');
+        err.status = 403;
+        err.type = 'CORS'
+        err.name = 'Forbidden'
     }
     callback(err, corsOptions);
 };

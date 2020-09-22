@@ -9,8 +9,9 @@ var GoogleStrategy = require('passport-google-oauth20').Strategy;
 var jwt = require('jsonwebtoken');
 var JwtStrategy = require('passport-jwt').Strategy;
 var ExtractJwt = require('passport-jwt').ExtractJwt;
-var User = require('./models/users');
 
+var User = require('./models/users');
+const myErr = require('./error');
 /*
 * PASSPORT CONFIGURATION
 */
@@ -143,33 +144,14 @@ exports.getToken = function(user) {
 };
 
 // Check if authenticated user matches stored user. 
-exports.matchUser = function(stored_id, req_id){
+exports.matchUser = function(stored_id, req_id, next){
   if (!req_id || !stored_id.equals(req_id))
   {
-    err = new Error('Unauthorized.');
-    err.status = 401;
-    return err;
+    return next(new myErr.UnauthorizedError());
   } else {
-    return null;
+    return true;
   }
 };
-
-// Check google token and create 
-/*exports.googleToken = async function(payload){
-  await User.findOne({googleId: payload['sub']}, function(err, user) {
-    if(err){ user = false }
-    else {
-      err = null;
-      if(!user) 
-      {
-        user = new User({googleId: payload['sub']});
-        //user.firstname = payload['name'];
-        //user.save((err, user) => {})
-      }
-    }
-  return user
-  })
-}*/
 
 /*
 * MIDDLEWARES

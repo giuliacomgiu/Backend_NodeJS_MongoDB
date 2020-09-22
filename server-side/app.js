@@ -11,6 +11,7 @@ const cors = require('./routes/cors');
 const indexRouter = require('./routes/index');
 const userRouter = require('./routes/userRouter');
 const dishRouter = require('./routes/dishRouter');
+const myErr = require('./error');
 
 // connecting to db
 mongoose.connect(process.env.MONGO_URI, {useNewUrlParser: true});
@@ -59,15 +60,40 @@ app.use(function(req, res, next) {
   next(createError(404));
 });
 
-// error handler
+//error preparation
 app.use(function(err, req, res, next) {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
+  next(err);
+});
 
+// database error handler
+app.use(function databaseHandler(err, req, res, next) {
+  if (err instanceof mongoose.Error ||
+      err instanceof myErr.NotFoundError ||
+      err instanceof myErr.UnauthorizedError) 
+      {
+        return res.status(err.status || 503).json({
+          success: false,
+          type: err.type,
+          name: err.name,
+          error: err.message
+        });
+      };
+  next(err);
+});
+
+// error handler
+app.use(function(err, req, res, next) {
   // render the error page
   res.status(err.status || 500);
-  res.render('error');
+  res.json({
+    success:false, 
+    type: err.type, 
+    name: err.name, 
+    error:err.message})
+  //res.render('error');
 });
 
 module.exports = app;
