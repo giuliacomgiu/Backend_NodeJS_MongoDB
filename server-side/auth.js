@@ -147,7 +147,7 @@ exports.getToken = function(user) {
 exports.matchUser = function(stored_id, req_id, next){
   if (!req_id || !stored_id.equals(req_id))
   {
-    return next(new myErr.UnauthorizedError());
+    return next(new myErr.UnauthOperationError());
   } else {
     return true;
   }
