@@ -60,10 +60,7 @@ dishRouter.route('/',)
         return res.json({success:true, links:obj.links, dish:dish})
       }, 
       (err) => next(err) )
-    .catch((err) => {
-      res.json({success: false, dish:dish});
-      return next(err);
-    });
+    .catch((err) => next(err));
   }
 )
 .put(cors.restrict, 
