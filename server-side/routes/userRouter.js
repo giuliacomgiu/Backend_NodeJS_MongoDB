@@ -23,9 +23,21 @@ userRouter.route('/')
   auth.verifyAdmin,
   (req, res, next) => 
   {
+    let obj = {};
+    obj.links = [];
+    obj.links.push({href:`/`, rel:'home', type:'GET'});
+    obj.links.push({href:`${routName}/register`, rel:'signup', type:'GET,POST'});
+    obj.links.push({href:`${routName}/login`, rel:'login', type:'GET,POST'});
+    obj.links.push({href:`${routName}/checkToken`, rel:'validate-token', type:'GET,POST'});
+    obj.links.push({href:`${routName}/google`, rel:'login-google', type:'GET'});
+    obj.links.push({href:`${routName}/facebook`, rel:'login-facebook', type:'GET'});
+    obj.links.push({href:`${routName}/facebook/token`, rel:'login-facebook-token', type:'GET'});
+    obj.links.push({href:`${routName}/logout`, rel:'logout', type:'GET'});
+    obj.links.push({href:`${routName}/ping`, rel:'ping', type:'GET'});
+
     res.statusCode = 200;
     res.contentType('application/json');
-    res.json({ success: true, message:"Will send all users"});
+    res.json({ success: true, links:obj.links, message:"Will send all users"});
   }
 );
 
@@ -40,7 +52,10 @@ userRouter.route('/register')
   auth.verifyAdmin, 
   (req, res, next) => 
   {
-    res.json({ success: true, message:"Will send registration page"}); 
+    let obj = {};
+    obj.links = [];
+    obj.links.push({href:`${routName}`, rel:'user', type:'GET'});
+    res.json({ success: true, link:obj.links, message:"Will send registration page"}); 
   }
 )
 .post(cors.restrict, (req, res, next) => {
@@ -82,7 +97,15 @@ userRouter.route('/login')
     });
 
     var token = auth.getToken({_id: req.user._id});
-    res.json({success: true, status: 'Login Successful!', token: token});
+    let obj = {};
+    obj.links = [];
+    obj.links.push({href:`${routName}`, rel:'user', type:'GET'});
+    res.json({
+      success: true, 
+      status: 'Login Successful!', 
+      links: obj.links, 
+      token: token
+    });
   })(req,res,next);
 });
 
@@ -97,7 +120,17 @@ userRouter.get('/checkToken', cors.restrict, function(req, res) {
         `InvalidUser`))
       } else {
       res.statusCode = 200;
-      return res.json({success:true, status: 'You are authenticated.', user:user})
+
+      let obj = {};
+      obj.links = [];
+      obj.links.push({href:`/`, rel:'home', type:'GET'});
+      obj.links.push({href:`${routName}`, rel:'user', type:'GET'});
+      return res.json({
+        success:true, 
+        status: 'You are authenticated.', 
+        links:obj.links,
+        user:user
+      })
     }
   })(req, res);
 });
@@ -126,7 +159,16 @@ userRouter.get('/facebook/token',
     var token = auth.getToken({_id: req.user._id});
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
-    return res.json({success: true, token: token, status: 'You are successfully logged in!'});
+    let obj = {};
+    obj.links = [];
+    obj.links.push({href:`/`, rel:'home', type:'GET'});
+    obj.links.push({href:`${routName}`, rel:'user', type:'GET'});
+    return res.json({
+      success: true, 
+      links:obj.links, 
+      token: token, 
+      status: 'You are successfully logged in!'
+    });
   } else {
     //return next(new myErr.AuthenticationError())
     res.statusCode = 401
