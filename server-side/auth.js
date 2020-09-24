@@ -4,8 +4,6 @@ var LocalStrategy = require('passport-local').Strategy;
 var FacebookStrategy = require('passport-facebook').Strategy;
 const FacebookTokenStrategy = require('passport-facebook-token');
 var GoogleStrategy = require('passport-google-oauth20').Strategy;
-//const {OAuth2Client} = require('google-auth-library');
-//const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 var jwt = require('jsonwebtoken');
 var JwtStrategy = require('passport-jwt').Strategy;
 var ExtractJwt = require('passport-jwt').ExtractJwt;
@@ -33,16 +31,6 @@ passport.use(new JwtStrategy(opts, function(jwt_payload, done) {
     }
   })
   .catch((err) => { return done(err, false) })
-/*  User.findOne({_id: jwt_payload._id}, function(err, user) {
-    if (err) {
-      return done(err, false);
-    }
-    if (user) {
-      return done(null, user);
-    } else {
-      return done(null, false);
-    }
-  });*/
 }));
 
 // Facebook token authentication
@@ -161,8 +149,7 @@ exports.matchUser = function(stored_id, req_id, next){
 exports.verifyAuthentication = function(req, res, next) {
   if (req.user) { next() }
   else {
-    res.status(401).end(); // this has no body
-    return;
+    return next(new myErr.AuthenticationError());
   }
 }
 
@@ -170,8 +157,6 @@ exports.verifyAuthentication = function(req, res, next) {
 exports.verifyAdmin = function(req, res, next){
   if (req.user.admin) { next() }
   else {
-    err = new Error('Unauthorized.'); // this has a body
-    err.status = 401;
-    return next(err);
+    return next(new myErr.AuthenticationError());
   }
 };

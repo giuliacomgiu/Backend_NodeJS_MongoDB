@@ -1,4 +1,5 @@
 var cors = require('cors');
+var myErr = require('../error')
 
 const whitelist = [process.env.APP_URI, process.env.APP_URI_SSL];
 
@@ -11,10 +12,7 @@ var corsRestrictOptions = (req, callback) => {
     }
     else {
         //corsOptions = { origin: false };
-        var err = new Error('Forbidden by CORS');
-        err.status = 403;
-        err.type = 'CORS'
-        err.name = 'Forbidden'
+        var err = new myErr.CORSError();
     }
     callback(err, corsOptions);
 };

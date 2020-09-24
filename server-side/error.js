@@ -72,9 +72,29 @@ class AuthenticationError extends Error {
     }
 }
 
+class CORSError extends Error {
+  constructor(
+    message = 'Forbidden by CORS', 
+    type = 'Unauthorized'){
+    // Pass remaining arguments (including vendor specific ones) to parent constructor
+      super(message)
+
+      // Maintains proper stack trace for where our error was thrown (only available on V8)
+      if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, CORSError)
+      }
+
+      this.name = 'CORSError'
+      // Custom debugging information
+      this.type = type
+      this.status = 403
+    }
+}
+
 module.exports = { 
   NotFoundError:NotFoundError,
   ForbiddenMethodError:ForbiddenMethodError,
   UnauthOperationError:UnauthOperationError,
-  AuthenticationError:AuthenticationError
+  AuthenticationError:AuthenticationError,
+  CORSError:CORSError
 }

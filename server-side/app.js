@@ -72,7 +72,9 @@ app.use(function(err, req, res, next) {
 app.use(function databaseHandler(err, req, res, next) {
   if (err instanceof mongoose.Error ||
       err instanceof myErr.NotFoundError ||
-      err instanceof myErr.UnauthorizedError) 
+      err instanceof myErr.UnauthOperationError ||
+      err instanceof myErr.AuthenticationError ||
+      err instanceof myErr.CORSError) 
       {
         return res.status(err.status || 503).json({
           success: false,
@@ -93,7 +95,6 @@ app.use(function(err, req, res, next) {
     type: err.type, 
     name: err.name, 
     error:err.message})
-  //res.render('error');
 });
 
 module.exports = app;
