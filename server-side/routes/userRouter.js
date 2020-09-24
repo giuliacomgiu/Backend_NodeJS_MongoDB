@@ -144,7 +144,9 @@ userRouter.get('/google',
 userRouter.get('/google/callback',
   cors.cors, 
   auth.passport.authenticate('google', 
-  { failureRedirect: `${process.env.APP_URI_SSL}${routName}/login` }),
+  { failureRedirect: 
+    `${process.env.APP_URI_SSL}:${process.env.PORT}${routName}/login` 
+  }),
   function(req, res) {
     res.redirect('/');
   });
@@ -172,7 +174,9 @@ userRouter.get('/facebook/token',
   } else {
     //return next(new myErr.AuthenticationError())
     res.statusCode = 401
-    return res.redirect(`${process.env.APP_URI_SSL}${routName}/login`);
+    return res.redirect(
+      `${process.env.APP_URI_SSL}:${process.env.PORT}${routName}/login`
+    );
   }
 });
 
@@ -183,7 +187,7 @@ userRouter.get('/facebook', cors.cors, auth.passport.authenticate('facebook') );
 userRouter.get('/facebook/callback',
   cors.cors,  
   auth.passport.authenticate('facebook', 
-  { failureRedirect: `${process.env.APP_URI_SSL}${routName}/login` }),
+  { failureRedirect: `${process.env.APP_URI_SSL}:${process.env.PORT}${routName}/login` }),
   function(req, res) {
     res.redirect('/');
   });

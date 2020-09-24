@@ -1,7 +1,8 @@
 var cors = require('cors');
 var myErr = require('../error')
 
-const whitelist = [process.env.APP_URI, process.env.APP_URI_SSL];
+const whitelist = [`${process.env.APP_URI}:${process.env.PORT}`, 
+    `${process.env.APP_URI_SSL}:${process.env.PORT}`];
 
 var corsRestrictOptions = (req, callback) => {
     var corsOptions;
