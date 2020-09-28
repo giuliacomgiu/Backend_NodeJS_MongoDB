@@ -7,6 +7,7 @@ const cors = require('./cors');
 var User = require('../models/users');
 var auth = require('../auth');
 var myErr = require('../error');
+var { config } = require('../config');
 
 //Adjusting to MongoDB + NodeJS updates
 mongoose.set('useNewUrlParser', true);
@@ -145,7 +146,7 @@ userRouter.get('/google/callback',
   cors.cors, 
   auth.passport.authenticate('google', 
   { failureRedirect: 
-    `${process.env.APP_URI_SSL}:${process.env.PORT}${routName}/login` 
+    `${config.APP_URI_SSL}:${config.PORT}${routName}/login` 
   }),
   function(req, res) {
     res.redirect('/');
@@ -175,7 +176,7 @@ userRouter.get('/facebook/token',
     //return next(new myErr.AuthenticationError())
     res.statusCode = 401
     return res.redirect(
-      `${process.env.APP_URI_SSL}:${process.env.PORT}${routName}/login`
+      `${config.APP_URI_SSL}:${config.PORT}${routName}/login`
     );
   }
 });
@@ -187,7 +188,7 @@ userRouter.get('/facebook', cors.cors, auth.passport.authenticate('facebook') );
 userRouter.get('/facebook/callback',
   cors.cors,  
   auth.passport.authenticate('facebook', 
-  { failureRedirect: `${process.env.APP_URI_SSL}:${process.env.PORT}${routName}/login` }),
+  { failureRedirect: `${config.APP_URI_SSL}:${config.PORT}${routName}/login` }),
   function(req, res) {
     res.redirect('/');
   });

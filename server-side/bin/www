@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-
+var auth = require('../auth')
+var { config, awsStart } = require('../config');
 /**
  * Local environnment variables.
  */
@@ -113,10 +114,20 @@ function onError(error) {
  * Event listener for HTTP server "listening" event.
  */
 
-function onListening() {
+async function onListening() {
   var addr = server.address();
   var bind = typeof addr === 'string'
     ? 'pipe ' + addr
     : 'port ' + addr.port;
   debug('Listening on ' + bind);
+
+//  if (process.env.NODE_ENV === 'AWS'){
+    await awsStart();
+    auth.configPassport();
+//  } else { config.setConfig() }
+
+  // must be called after aws variables are loaded
+  app.use(require('express-session')({secret: config.SECRET_KEY}))
+  app.use(auth.passport.initialize());
+  app.use(auth.passport.session());
 }
