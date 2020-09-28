@@ -20,4 +20,4 @@ All data is stored in a MongoDB database.
 
 ## Server-side
 The server-side was developed with NodeJS, Express and MongoDB.
-It uses mongoose for database operation, passport for suthentication, Morgan for debug logs, cors for CORS validation and dotenv for environment variables.
+It uses mongoose for database operations, passport for authentication, Morgan for debug logs, cors for CORS validation and dotenv for environment variables.
